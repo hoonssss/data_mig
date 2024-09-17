@@ -1,6 +1,5 @@
-package com.example.sql_test;
+package com.example.sql_mig;
 
-import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Date;
@@ -13,7 +12,7 @@ import java.util.List;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
-public class Sql_test {
+public class SqlMigApplication {
 
     public static void main(String[] args) {
         Connection srcConn = null;
@@ -37,10 +36,8 @@ public class Sql_test {
             scrTbl = arrScrTbl.get(k);
             tarTbl = arrTarTbl.get(k);
             try {
-                srcConn = DriverManager.getConnection("jdbc:mysql://localhost:3306/springbatch",
-                    "root", "password");
-                trcConn = DriverManager.getConnection("jdbc:mysql://localhost:3306/testDB", "root",
-                    "password");
+                srcConn = DriverManager.getConnection("jdbc:mysql://localhost:3307/springbatch", "root", "password");
+                trcConn = DriverManager.getConnection("jdbc:mysql://localhost:3306/testDB", "root", "password");
 
                 DatabaseMetaData metaData = srcConn.getMetaData();
                 ResultSet columns = metaData.getColumns(null, null, scrTbl, null);
@@ -144,3 +141,4 @@ public class Sql_test {
         }
     }
 }
+
