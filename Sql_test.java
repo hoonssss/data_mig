@@ -24,13 +24,7 @@ public class SqlMigApplication {
         List<String> arrTarTbl = new ArrayList<>();
         arrTarTbl.add("BATCH_JOB_INSTANCE_1");
         arrTarTbl.add("BATCH_JOB_EXECUTION_1");
-/*        String arrScrTbl[] = {
-            "BATCH_JOB_INSTANCE",r
-            "BATCH_JOB_EXECUTION"
-        };*/
 
-        //String scrTbl = "BATCH_JOB_INSTANCE";
-        //String tarTbl = "BATCH_JOB_INSTANCE_1";
         String scrTbl = "", tarTbl = "";
         for (var k = 0; k < arrScrTbl.size(); k++) {
             scrTbl = arrScrTbl.get(k);
@@ -46,8 +40,6 @@ public class SqlMigApplication {
                 StringBuilder insertColumns = new StringBuilder();
                 StringBuilder insertValues = new StringBuilder();
 
-                int columnCount = 0;
-
                 LocalDate currentDate = LocalDate.now();
                 Date sqlDate = Date.valueOf(currentDate);
 
@@ -59,12 +51,20 @@ public class SqlMigApplication {
                 insertValues.append("?");
                 insertValues.append(", ");
 
-                columnCount++;
+                // Append LAST_USER to SELECT and INSERT statements
+                selectColumns.append("'MIG' AS LAST_USER");
+                selectColumns.append(", ");
+                insertColumns.append("LAST_USER");
+                insertColumns.append(", ");
+                insertValues.append("?");
+                insertValues.append(", ");
 
+                // Append actual columns from the source table
+                int columnCount = 2; // Already added BS_YMD and LAST_USER
                 while (columns.next()) {
                     String columnName = columns.getString("COLUMN_NAME");
 
-                    if (columnCount > 1) {
+                    if (columnCount > 2) {
                         selectColumns.append(", ");
                         insertColumns.append(", ");
                         insertValues.append(", ");
@@ -98,10 +98,10 @@ public class SqlMigApplication {
 
                 while (rs.next()) {
                     insertStmt.setDate(1, sqlDate);  // BS_YMD
-                    log.info("Setting parameter " + 1 + " to value: " + sqlDate + " type: "
-                        + sqlDate.getClass().getName());
-                    for (int i = 2; i <= columnCount; i++) {
-                        Object value = rs.getObject(i);
+                    insertStmt.setString(2, "MIG");  // LAST_USER
+
+                    for (int i = 1; i <= columnCount; i++) { // 3부터 시작
+                        Object value = rs.getObject(i);  // 인덱스 조정
 
                         // 데이터 타입을 명시적으로 설정
                         if (value instanceof Long) {
@@ -115,8 +115,6 @@ public class SqlMigApplication {
                         } else {
                             insertStmt.setObject(i, value);
                         }
-
-                        //log.info("Setting parameter " + i + " to value: " + value + " type: " + value.getClass().getName());
                     }
 
                     insertStmt.executeUpdate();
@@ -141,4 +139,3 @@ public class SqlMigApplication {
         }
     }
 }
-
