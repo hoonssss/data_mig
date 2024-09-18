@@ -30,8 +30,8 @@ public class SqlMigApplication {
             scrTbl = arrScrTbl.get(k);
             tarTbl = arrTarTbl.get(k);
             try {
-                srcConn = DriverManager.getConnection("jdbc:mysql://localhost:3307/springbatch", "root", "password");
-                trcConn = DriverManager.getConnection("jdbc:mysql://localhost:3306/testDB", "root", "password");
+                srcConn = DriverManager.getConnection("jdbc:mysql://localhost:3307/springbatch", "root", "wo331846");
+                trcConn = DriverManager.getConnection("jdbc:mysql://localhost:3306/testDB", "root", "wo331846!!");
 
                 DatabaseMetaData metaData = srcConn.getMetaData();
                 ResultSet columns = metaData.getColumns(null, null, scrTbl, null);
@@ -100,8 +100,8 @@ public class SqlMigApplication {
                     insertStmt.setDate(1, sqlDate);  // BS_YMD
                     insertStmt.setString(2, "MIG");  // LAST_USER
 
-                    for (int i = 1; i <= columnCount; i++) { // 3부터 시작
-                        Object value = rs.getObject(i);  // 인덱스 조정
+                    for (int i = 1; i <= columnCount; i++) {
+                        Object value = rs.getObject(i);
 
                         // 데이터 타입을 명시적으로 설정
                         if (value instanceof Long) {
