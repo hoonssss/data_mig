@@ -1,4 +1,4 @@
-package com.example.sql_mig;
+package com.example.sql_mig.mig;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -43,7 +43,7 @@ public class SqlMigApplication {
                 LocalDate currentDate = LocalDate.now();
                 Date sqlDate = Date.valueOf(currentDate);
 
-                // Append BS_YMD to SELECT and INSERT statements
+                // BS_YMD 추가
                 selectColumns.append("'").append(sqlDate).append("' AS BS_YMD");
                 selectColumns.append(", ");
                 insertColumns.append("BS_YMD");
@@ -51,7 +51,7 @@ public class SqlMigApplication {
                 insertValues.append("?");
                 insertValues.append(", ");
 
-                // Append LAST_USER to SELECT and INSERT statements
+                // LAST_USER 추가
                 selectColumns.append("'MIG' AS LAST_USER");
                 selectColumns.append(", ");
                 insertColumns.append("LAST_USER");
@@ -59,8 +59,8 @@ public class SqlMigApplication {
                 insertValues.append("?");
                 insertValues.append(", ");
 
-                // Append actual columns from the source table
-                int columnCount = 2; // Already added BS_YMD and LAST_USER
+                // 소스 테이블의 실제 컬럼 추가
+                int columnCount = 2; // 이미 BS_YMD와 LAST_USER가 추가됨
                 while (columns.next()) {
                     String columnName = columns.getString("COLUMN_NAME");
 
@@ -93,33 +93,40 @@ public class SqlMigApplication {
 
                 ResultSet rs = selectStmt.executeQuery();
 
-                // 데이터 삭제
-                deleteStmt.executeUpdate();
+                // 데이터가 있는지 확인
+                if (!rs.next()) {
+                    log.info("소스 테이블 " + scrTbl + "에 데이터가 없습니다.");
+                } else {
+                    // 데이터 삭제
+                    deleteStmt.executeUpdate();
 
-                while (rs.next()) {
-                    for (int i = 1; i <= columnCount; i++) {
-                        if(i == 1){
-                            insertStmt.setDate(1, sqlDate);  // BS_YMD
-                        }else if(i == 2){
-                            insertStmt.setString(2, "MIG");  // LAST_USER
-                        }else{
-                            Object value = rs.getObject(i);
-                            // 데이터 타입을 명시적으로 설정
-                            if (value instanceof Long) {
-                                insertStmt.setLong(i, (Long) value);
-                            } else if (value instanceof Integer) {
-                                insertStmt.setLong(i, ((Integer) value).longValue()); // Long으로 변환
-                            } else if (value instanceof String) {
-                                insertStmt.setString(i, (String) value);
-                            } else if (value instanceof Date) {
-                                insertStmt.setDate(i, (Date) value);
+                    // 데이터 삽입
+                    do {
+                        for (int i = 1; i <= columnCount; i++) {
+                            if (i == 1) {
+                                insertStmt.setDate(1, sqlDate);  // BS_YMD
+                            } else if (i == 2) {
+                                insertStmt.setString(2, "MIG");  // LAST_USER
                             } else {
-                                insertStmt.setObject(i, value);
+                                Object value = rs.getObject(i);
+                                // 데이터 타입을 명시적으로 설정
+                                if (value instanceof Long) {
+                                    insertStmt.setLong(i, (Long) value);
+                                } else if (value instanceof Integer) {
+                                    insertStmt.setLong(i, ((Integer) value).longValue()); // Long으로 변환
+                                } else if (value instanceof String) {
+                                    insertStmt.setString(i, (String) value);
+                                } else if (value instanceof Date) {
+                                    insertStmt.setDate(i, (Date) value);
+                                } else {
+                                    insertStmt.setObject(i, value);
+                                }
                             }
                         }
-                    }
-                    insertStmt.executeUpdate();
+                        insertStmt.executeUpdate();
+                    } while (rs.next());
                 }
+
                 srcConn.close();
                 trcConn.close();
             } catch (Exception e) {
@@ -132,6 +139,7 @@ public class SqlMigApplication {
                     if (trcConn != null && !trcConn.isClosed()) {
                         trcConn.close();
                     }
+                    log.info("소스 테이블 " + scrTbl + " 데이터 적재 완료.");
                 } catch (Exception e) {
                     log.error("에러 발생: " + e.getMessage(), e);
                 }
